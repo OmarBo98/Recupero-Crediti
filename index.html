@@ -999,6 +999,7 @@ select.rc-edit{cursor:pointer}
 
   async function gdLogin(){
     if(!gdClientId()){openSetup();return;}
+        if(gisReady&&gdTokenClient){connectDrive();return;}
     gdHint('Apertura accesso Google…');
     try{await ensureGis();if(!gisReady){gdHint('Libreria Google non caricata (sei offline?).','err');return;}
       if(!gdTokenClient)initGoogleAuth();
@@ -1090,6 +1091,7 @@ select.rc-edit{cursor:pointer}
   gdRender();
   /* ==================================================== */
 
+ensureGis().then(()=>{if(gisReady&&gdClientId()&&!gdTokenClient)initGoogleAuth();}).catch(()=>{});
   ensureGrips();applyFolderOrder();
   renderAll();
 })();
