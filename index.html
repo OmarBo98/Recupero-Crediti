@@ -823,18 +823,32 @@ select.rc-edit{cursor:pointer}
 
   /* ---- ricostruzione totale della tabella azienda dal file ---- */
   function rebuildCompany(co,fileName,fc){
-    let nOpen=0;
-    fc.forEach(c=>{if(Math.abs(c.amount)>0.005)nOpen++;});
-    const nInv=fc.reduce((s,c)=>s+((c.inv&&c.inv.length)||0),0);
-    const tot=Math.round(fc.reduce((s,c)=>s+(c.amount||0),0)*100)/100;
-    state[co]=fc.map(c=>({name:c.name,amount:c.amount,date:null,note:null,inv:c.inv||[],_flash:'rc-flash-new'}));
-    uploads[co]={fileName:fileName,ts:Date.now(),nClients:nOpen,nInv:nInv,total:tot};
-    save();saveUploads();
-    active=co;sortKey='amount';sortDir=-1;
-    g('rcActiveLab')&&(g('rcActiveLab').textContent=SCHEMA[co].label);
-    renderAll();renderUploads();renderUploaders();
-    setTimeout(()=>{(state[co]||[]).forEach(x=>delete x._flash);},2000);
-    toast(`${SCHEMA[co].label}: ${nOpen} clienti · ${n2(tot)} € insoluto`);}
+        /* preserva stato, ultimo contatto, note, data pagamento e storico acconti dei clienti gia'
+               presenti (abbinati per nome esatto), cosi' un nuovo export fatture non cancella il lavoro fatto */
+        const prevByName={};(state[co]||[]).forEach(c=>{prevByName[c.name]=c;});
+        const fcNames=new Set(fc.map(c=>c.name));
+        const hasNotes=c=>c&&(c.status||c.date||c.note||c.paidDate||(c.payments&&c.payments.length));
+        let nOpen=0,nKept=0;
+        fc.forEach(c=>{if(Math.abs(c.amount)>0.005)nOpen++;});
+        const nInv=fc.reduce((s,c)=>s+((c.inv&&c.inv.length)||0),0);
+        const tot=Math.round(fc.reduce((s,c)=>s+(c.amount||0),0)*100)/100;
+        const out=fc.map(c=>{const prev=prevByName[c.name];if(hasNotes(prev))nKept++;
+                                   return {name:c.name,amount:c.amount,date:prev?prev.date:null,note:prev?prev.note:null,
+                                                   status:prev?prev.status:undefined,paidDate:prev?prev.paidDate:undefined,payments:prev?prev.payments:undefined,
+                                                   inv:c.inv||[],_flash:'rc-flash-new'};});
+        /* clienti con annotazioni manuali che non compaiono piu' nel nuovo file (es. saldo azzerato,
+               quindi verosimilmente incassato): li mantengo a saldo 0 invece di farli sparire nel nulla */
+        Object.keys(prevByName).forEach(name=>{if(fcNames.has(name))return;const prev=prevByName[name];
+                                                     if(hasNotes(prev)){out.push({name:prev.name,amount:0,date:prev.date,note:prev.note,status:prev.status,
+                                                                                          paidDate:prev.paidDate,payments:prev.payments,inv:prev.inv||[]});nKept++;}});
+        state[co]=out;
+        uploads[co]={fileName:fileName,ts:Date.now(),nClients:nOpen,nInv:nInv,total:tot};
+        save();saveUploads();
+        active=co;sortKey='amount';sortDir=-1;
+        g('rcActiveLab')&&(g('rcActiveLab').textContent=SCHEMA[co].label);
+        renderAll();renderUploads();renderUploaders();
+        setTimeout(()=>{(state[co]||[]).forEach(x=>delete x._flash);},2000);
+        toast(`${SCHEMA[co].label}: ${nOpen} clienti · ${n2(tot)} € insoluto`+(nKept?` · ${nKept} annotazioni conservate`:''));}
 
   function removeUpload(co){
     if(!confirm(`Rimuovere il file di ${SCHEMA[co].label} e svuotarne la tabella insoluti?`))return;
