@@ -1046,7 +1046,7 @@ select.rc-edit{cursor:pointer}
           try{const snap=gdSnapshot();
                     const blob=new Blob([JSON.stringify(snap,null,2)],{type:'application/json'});
                     const url=URL.createObjectURL(blob);
-                    const a=document.createElement('a');a.href=url;a.download='fluentfinance_recupero_backup_'+todayISO()+'.json';
+                    const a=document.createElement('a');a.href=url;a.download='fluentfinance_recupero_backup_'+todayISO()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);backupHint('Backup scaricato.','ok');toast('Backup salvato sul dispositivo');}catch(e){backupHint('Errore nel salvataggio: '+(e.message||e),'err');}} function localBackupLoadFile(file){if(!confirm('Ripristinare i dati da questo file di backup? I dati attuali in questo browser verranno sostituiti.'))return;const r=new FileReader();r.onload=e=>{try{const snap=JSON.parse(e.target.result);gdApply(snap);applyFolderOrder();renderAll();renderUploads();renderUploaders();const d=snap.ts?new Date(snap.ts):null;backupHint('Dati ripristinati'+(d?(' (backup del '+('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+')'):'')+'.','ok');toast('Backup ripristinato');}catch(err){backupHint('File non valido: '+(err.message||err),'err');}};r.onerror=()=>backupHint('Impossibile leggere il file.','err');r.readAsText(file);}
 
   async function gdFindFile(){
     const q=encodeURIComponent("name='"+GD_FILE+"' and trashed=false");
