@@ -68,7 +68,7 @@ button{font-family:inherit}
 .gd-state::before{content:"";width:8px;height:8px;border-radius:50%;background:#6C7E9E;flex:none}
 .gdrive.on .gd-state::before{background:#3FD6A7}
 .gd-sub{font-size:11px;color:#8EA0BE;margin:5px 0 10px;line-height:1.5}
-.gd-actions{display:flex;flex-direction:column;gap:7px}
+.gd-actions{display:flex;flex-direction:column;gap:7px}.doc-actions{display:flex;flex-direction:column;gap:7px}
 .gd-hint{font-size:10.5px;color:#C9A15A;margin-top:8px;line-height:1.5;display:none}
 .gd-hint.on{display:block}
 .gd-hint.ok{color:#3FD6A7}.gd-hint.err{color:#F2857F}
@@ -190,7 +190,7 @@ svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
 .navit::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5;flex:none}
 .navit[aria-current="true"]::before{opacity:1}
 .rc-hint{font-size:11.5px;color:#F0C98A;background:rgba(201,130,27,.12);border:1px solid #5a4524;border-radius:9px;padding:8px 10px;margin-top:10px;display:none}
-.rc-hint.on{display:block}
+.rc-hint.on{display:block}.rc-hint.ok{color:#3FD6A7;background:rgba(63,214,167,.10);border-color:#1f4d3d}.rc-hint.err{color:#F2857F;background:rgba(242,133,127,.10);border-color:#5a2b28}
 
 /* ---------- recupero crediti (main) ---------- */
 .rc-tabs{display:inline-flex;gap:3px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:4px}
@@ -359,6 +359,7 @@ select.rc-edit{cursor:pointer}
 
       <button class="btn ghost" id="rcChartBtn">Grafici e andamenti</button>
       <button class="btn" id="rcExport">Esporta .xlsx</button>
+      <div class="lab" style="margin-top:18px">Backup locale</div><div class="rc-hint" id="rcBackupHint"></div><div class="doc-actions"><button class="btn" id="rcBackupSave">Salva backup</button><button class="btn ghost" id="rcBackupLoad">Carica backup</button></div><input type="file" id="rcBackupFile" accept="application/json,.json" hidden>
 
       <div class="lab" style="margin-top:18px">Google Drive</div>
       <div class="gdrive" id="rcGDrive">
@@ -1039,6 +1040,14 @@ select.rc-edit{cursor:pointer}
     if(snap.uploads&&typeof snap.uploads==='object'){uploads=snap.uploads;saveUploads();}
     if(Array.isArray(snap.folderOrder)&&snap.folderOrder.length){folderOrder=snap.folderOrder;saveOrder();}}
 
+    /* ---- backup locale: scarica/ricarica un file .json con l'intero stato dell'app, senza Google ---- */
+    function backupHint(msg,kind){const h=g('rcBackupHint');if(!h)return;h.textContent=msg||'';h.className='rc-hint'+(msg?' on':'')+(kind?' '+kind:'');}
+    function localBackupSave(){
+          try{const snap=gdSnapshot();
+                    const blob=new Blob([JSON.stringify(snap,null,2)],{type:'application/json'});
+                    const url=URL.createObjectURL(blob);
+                    const a=document.createElement('a');a.href=url;a.download='fluentfinance_recupero_backup_'+todayISO()+'.json';
+
   async function gdFindFile(){
     const q=encodeURIComponent("name='"+GD_FILE+"' and trashed=false");
     const r=await driveApi('https://www.googleapis.com/drive/v3/files?q='+q+'&spaces=drive&fields=files(id,modifiedTime)&pageSize=1');
@@ -1097,7 +1106,10 @@ select.rc-edit{cursor:pointer}
       gdTokenClient=null;g('rcSetupScrim').classList.remove('on');gdHint('Client ID salvato. Ora premi «Accedi con Google».','ok');};}
 
   /* --- wire Drive --- */
-  g('rcGdLogin').onclick=gdLogin;
+g('rcBackupSave').onclick=localBackupSave;
+    g('rcBackupLoad').onclick=()=>g('rcBackupFile').click();
+    g('rcBackupFile').onchange=e=>{if(e.target.files[0])localBackupLoadFile(e.target.files[0]);e.target.value='';};
+    g('rcGdLogin').onclick=gdLogin;
   g('rcGdSave').onclick=gdSave;
   g('rcGdLoad').onclick=gdLoad;
   g('rcGdLogout').onclick=gdLogout;
