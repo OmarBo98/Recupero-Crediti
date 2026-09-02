@@ -483,11 +483,12 @@ select.rc-edit{cursor:pointer}
    Matching: normalizzazione + sottostringa / token-subset; ambiguità → "Da verificare".
 ============================================================ */
 (function(){
-  const SEED = {"NSA": [], "Sanitech": []};
-  const SCHEMA = {
-    NSA:      {label:'NSA srl',      cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},
-    Sanitech: {label:'Sanitech srl', cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]}
-  };
+  const SEED = {"NSA": [], "Sanitech": [], "SanitechCoop": []};
+      const SCHEMA = {
+              NSA:      {label:'NSA srl',      cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},
+              Sanitech: {label:'Sanitech srl', cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},
+              SanitechCoop: {label:'Soc Coop Sanitech ARL', cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]}
+      };
   const LS='fluentfinance_recupero_v2';
   function migrate(st){
     Object.keys(SCHEMA).forEach(k=>{
