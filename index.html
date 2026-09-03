@@ -799,7 +799,7 @@ select.rc-edit{cursor:pointer}
       xlabels+=`<text x="${(padL+i*bw+bw/2).toFixed(1)}" y="${H-padB+16}" text-anchor="middle">${dmShort(wk.start)}</text>`;});
     g('rcChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${W}px;font-family:var(--mono)">${grid}${bars}${xlabels}<line class="axis" x1="${padL}" y1="${(padT+plotH).toFixed(1)}" x2="${W-padR}" y2="${(padT+plotH).toFixed(1)}"/></svg>`;}
 
-  function renderAll(){renderTabs();renderKpis();renderCall();renderTable();renderScadenza();renderLawyer();renderPaid();renderLost();renderRientro();applyFolderOrder();}
+  function captureScroll(){const m={};document.querySelectorAll('.rc-tablewrap').forEach(w=>{const tb=w.querySelector('tbody');if(tb&&tb.id)m[tb.id]=w.scrollTop;});return m;}function restoreScroll(m){document.querySelectorAll('.rc-tablewrap').forEach(w=>{const tb=w.querySelector('tbody');if(tb&&tb.id&&m[tb.id])w.scrollTop=m[tb.id];});}function renderAll(){const _sc=captureScroll();renderTabs();renderKpis();renderCall();renderTable();renderScadenza();renderLawyer();renderPaid();renderLost();renderRientro();applyFolderOrder();restoreScroll(_sc);}
 
   /* ---- upload ---- */
   function findCols(header){const H=header.map(h=>norm(String(h||'')).replace(/\s+/g,''));
