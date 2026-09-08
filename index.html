@@ -484,13 +484,7 @@ select.rc-edit{cursor:pointer}
    Matching: normalizzazione + sottostringa / token-subset; ambiguità → "Da verificare".
 ============================================================ */
 (function(){
-  const SEED = {"NSA": [], "Sanitech": [], "SanitechCoop": []};
-      const SCHEMA = {
-              NSA:      {label:'NSA srl',      cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},
-              Sanitech: {label:'Sanitech srl', cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},
-              SanitechCoop: {label:'Soc Coop Sanitech ARL', cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]}
-      };
-  const LS='fluentfinance_recupero_v2';
+  const LS='fluentfinance_recupero_v2';const LS_SCHEMA='fluentfinance_recupero_schema_v1';function loadSchema(){try{const s=localStorage.getItem(LS_SCHEMA);if(s){const p=JSON.parse(s);if(p&&Object.keys(p).length)return p;}}catch(e){}try{if(localStorage.getItem(LS)){const legacy={NSA:{label:'NSA srl',cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},Sanitech:{label:'Sanitech srl',cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]},SanitechCoop:{label:'Soc Coop Sanitech ARL',cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]}};localStorage.setItem(LS_SCHEMA,JSON.stringify(legacy));return legacy;}}catch(e){}return null;}function saveSchema(s){try{localStorage.setItem(LS_SCHEMA,JSON.stringify(s));}catch(e){}}function renderOnboarding(){const wrap=document.createElement('div');wrap.style.cssText='position:fixed;inset:0;background:#0F1828;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Inter,sans-serif;padding:20px';wrap.innerHTML=`<div style="background:#FFFFFF;border-radius:16px;padding:36px 32px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#0F1828;margin-bottom:6px">Fluent<span style="color:#3FD6A7">Finance</span></div><div style="font-size:14px;color:#62708A;margin-bottom:22px;line-height:1.5">Benvenuto! Prima di iniziare, inserisci il nome della tua azienda (puoi aggiungerne altre in seguito).</div><div id="obList"></div><button type="button" id="obAdd" style="background:none;border:1px dashed #D7DEEA;color:#0F876B;border-radius:9px;padding:8px 12px;font-size:12.5px;cursor:pointer;margin-top:4px;width:100%">+ Aggiungi un'altra azienda</button><div id="obErr" style="color:#C0473A;font-size:12.5px;margin-top:10px;display:none"></div><button type="button" id="obGo" style="background:#0F876B;color:#fff;border:0;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;margin-top:18px;width:100%">Inizia</button></div>`;document.body.appendChild(wrap);const list=wrap.querySelector('#obList');function addRow(){const row=document.createElement('input');row.type='text';row.placeholder='Nome azienda';row.className='ob-row';row.style.cssText='display:block;width:100%;padding:10px 12px;border:1px solid #D7DEEA;border-radius:9px;font-size:14px;margin-bottom:8px;box-sizing:border-box';list.appendChild(row);row.focus();}addRow();wrap.querySelector('#obAdd').onclick=addRow;wrap.querySelector('#obGo').onclick=()=>{const names=[...list.querySelectorAll('.ob-row')].map(i=>i.value.trim()).filter(Boolean);if(!names.length){const err=wrap.querySelector('#obErr');err.textContent=`Inserisci almeno il nome di un'azienda.`;err.style.display='block';return;}const schema={};names.forEach((n,i)=>{schema['co'+(i+1)]={label:n,cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]};});saveSchema(schema);location.reload();};}let SCHEMA=loadSchema();if(!SCHEMA){renderOnboarding();return;}const SEED={};Object.keys(SCHEMA).forEach(k=>SEED[k]=[]);
   function migrate(st){
     Object.keys(SCHEMA).forEach(k=>{
       if(!st[k]) st[k]=JSON.parse(JSON.stringify(SEED[k]||[]));
@@ -969,7 +963,7 @@ select.rc-edit{cursor:pointer}
   /* Per collegare l'app serve un Client ID OAuth (vedi finestra di configurazione). */
   var GOOGLE_CLIENT_ID = '458486401938-231n70j1690ri69dien3rrbcom7rdt17.apps.googleusercontent.com';   /* incorporato: non serve piu' incollarlo su nessun dispositivo */
   const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
-  const GD_ALLOWED='boscomar98@gmail.com';               /* solo questo account puo' sincronizzare */
+  const GD_ALLOWED=['boscomar98@gmail.com','mirkocicero73@gmail.com'];   /* solo questi account possono sincronizzare */
   const GD_FILE='fluentfinance_recupero_backup.json';    /* nome del file di backup su Drive */
   const LS_CID='fluentfinance_recupero_gclientid';
   let gdToken=null, gdTokenClient=null, gdFileId=null, gdEmail=null, gisReady=false;
@@ -1000,8 +994,8 @@ select.rc-edit{cursor:pointer}
     if(resp.error){gdHint('Accesso annullato o negato.','err');return;}
     gdToken=resp.access_token;
     try{const email=await gdFetchEmail();
-      if(email&&GD_ALLOWED&&email.toLowerCase()!==GD_ALLOWED.toLowerCase()){
-        gdHint('Questo account ('+email+') non è autorizzato. Usa '+GD_ALLOWED+'.','err');
+      if(email&&GD_ALLOWED&&!GD_ALLOWED.some(a=>a.toLowerCase()===email.toLowerCase())){
+        gdHint('Questo account ('+email+') non è autorizzato. Usa: '+GD_ALLOWED.join(', ')+'.','err');
         gdToken=null;gdRender();return;}
       gdEmail=email;}catch(e){gdEmail=null;}
     gdRender();gdHint('Collegato. I dati non sono ancora salvati su Drive: usa «Salva su Drive».','ok');}
