@@ -494,7 +494,7 @@ select.rc-edit{cursor:pointer}
     return st;
   }
   const load=()=>{try{const s=localStorage.getItem(LS);if(s)return migrate(JSON.parse(s));}catch(e){}return JSON.parse(JSON.stringify(SEED));};
-  const save=()=>{try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}};
+  const LS_MEMO='fluentfinance_recupero_memo_v1';const nk=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');const memoLoad=()=>{try{return JSON.parse(localStorage.getItem(LS_MEMO))||{};}catch(e){return {};}};const hasNote=c=>c&&(c.status||c.date||c.note||c.paidDate||(c.payments&&c.payments.length));const hasIncasso=c=>c&&(c.paidDate||(c.payments&&c.payments.length)||c.status==='Pagato');const save=()=>{try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}try{const m=memoLoad();Object.keys(state).forEach(co=>{const mc=m[co]||(m[co]={});(state[co]||[]).forEach(c=>{const k=nk(c.name);if(!k)return;if(hasNote(c))mc[k]={name:c.name,status:c.status,date:c.date,note:c.note,paidDate:c.paidDate,payments:c.payments};else delete mc[k];});});localStorage.setItem(LS_MEMO,JSON.stringify(m));}catch(e){}};
   /* --- metadati dei file caricati (uno per azienda) --- */
   const LS_UP='fluentfinance_recupero_uploads_v1';
   const loadUploads=()=>{try{const s=localStorage.getItem(LS_UP);if(s)return JSON.parse(s);}catch(e){}return {};};
@@ -821,7 +821,7 @@ select.rc-edit{cursor:pointer}
   function rebuildCompany(co,fileName,fc){
         /* preserva stato, ultimo contatto, note, data pagamento e storico acconti dei clienti gia'
                presenti (abbinati per nome esatto), cosi' un nuovo export fatture non cancella il lavoro fatto */
-        const prevByName={};(state[co]||[]).forEach(c=>{prevByName[c.name]=c;});
+        const prevByName={};{const _m=memoLoad(),_mc=_m[co]||{},_cur={},_fk=new Set(fc.map(c=>nk(c.name)));(state[co]||[]).forEach(c=>{if(hasNote(c))_cur[nk(c.name)]=c;});fc.forEach(c=>{const p=_cur[nk(c.name)]||_mc[nk(c.name)];if(p)prevByName[c.name]=p;});(state[co]||[]).forEach(c=>{if(hasIncasso(c)&&!_fk.has(nk(c.name)))prevByName[c.name]=c;});Object.keys(_mc).forEach(k=>{if(!_fk.has(k)&&!hasIncasso(_mc[k]))delete _mc[k];});_m[co]=_mc;try{localStorage.setItem(LS_MEMO,JSON.stringify(_m));}catch(e){}}
         const fcNames=new Set(fc.map(c=>c.name));
         const hasNotes=c=>c&&(c.status||c.date||c.note||c.paidDate||(c.payments&&c.payments.length));
         let nOpen=0,nKept=0;
