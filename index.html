@@ -657,26 +657,26 @@ select.rc-edit{cursor:pointer}
     }).join('');
     const lbl=mode==='main'?(list.length===1?'fattura scaduta':'fatture scadute'):(list.length===1?'fattura aperta':'fatture aperte');
     return `<div class="rc-invbox"><div class="rc-invhdr">${list.length} ${lbl}</div>${lines}</div>`;}
-  function rowHTML(r,cols,mode){const amt=mode==='paid'?receivedTotal(r):mode==='main'?overdueAmt(r):r.amount;
+  function rowHTML(r,cols,mode,i){const amt=mode==='paid'?receivedTotal(r):mode==='main'?overdueAmt(r):r.amount;
     const showInv=mode==='main'?(r.inv||[]).filter(iv=>!isScad(iv)):(r.inv||[]);
     const hasInv=showInv.length, key=active+':'+r._i;
     const arrow=hasInv?`<span class="rc-exp${rcExpanded.has(key)?' open':''}" data-expk="${key}" title="Mostra fatture">▸</span>`:'<span class="rc-exp-sp"></span>';
     const amtCell=(mode==='paid')
       ?`<td class="n${amt<0?' neg':''}">${n2(amt)}</td>`
       :`<td class="n rc-cell${amt<0?' neg':''}" data-i="${r._i}" data-f="amount" data-mode="${mode}" title="Clicca per modificare l'insoluto">${n2(amt)}</td>`;
-    return `<tr${(()=>{const a=ageClass(r,mode);const c=[r._flash,a].filter(Boolean).join(' ');return c?` class="${c}"`:''})()}><td class="cli">${arrow}${esc(r.name)}</td>`+
+    return `<tr${(()=>{const a=ageClass(r,mode);const c=[r._flash,a].filter(Boolean).join(' ');return c?` class="${c}"`:''})()}><td class="rc-num">${i}</td><td class="cli">${arrow}${esc(r.name)}</td>`+
     amtCell+cols.map(([k])=>cellFor(r,k)).join('')+'</tr>';}
   function fillBody(tbId,arr,sumLabel,mode){const cols=SCHEMA[active].cols;let html='';
-    arr.forEach(r=>{html+=rowHTML(r,cols,mode);
+    arr.forEach((r,i)=>{html+=rowHTML(r,cols,mode,i+1);
       const showInv=mode==='main'?(r.inv||[]).filter(iv=>!isScad(iv)):(r.inv||[]);
       if(showInv.length&&rcExpanded.has(active+':'+r._i))
-        html+=`<tr class="rc-invrow"><td colspan="${2+cols.length}">${invoicesHTML(r,mode)}</td></tr>`;});
+        html+=`<tr class="rc-invrow"><td colspan="${3+cols.length}">${invoicesHTML(r,mode)}</td></tr>`;});
     if(sumLabel!==undefined&&arr.length){const tot=arr.reduce((s,x)=>s+(mode==='paid'?receivedTotal(x):mode==='main'?overdueAmt(x):(x.amount||0)),0);
-      html+=`<tr class="rc-sumrow"><td class="cli">${sumLabel}</td><td class="n">${n2(tot)}</td><td colspan="${cols.length}"></td></tr>`;}
-    if(!arr.length)html=`<tr><td colspan="${2+cols.length}" class="rc-empty">Nessuna posizione.</td></tr>`;
+      html+=`<tr class="rc-sumrow"><td class="rc-num"></td><td class="cli">${sumLabel}</td><td class="n">${n2(tot)}</td><td colspan="${cols.length}"></td></tr>`;}
+    if(!arr.length)html=`<tr><td colspan="${3+cols.length}" class="rc-empty">Nessuna posizione.</td></tr>`;
     g(tbId).innerHTML=html;}
   function staticHead(thId){const cols=SCHEMA[active].cols;
-    g(thId).innerHTML='<tr><th>Cliente</th><th class="n">Insoluto</th>'+cols.map(([,l])=>`<th>${l}</th>`).join('')+'</tr>';}
+    g(thId).innerHTML='<tr><th class="rc-num">#</th><th>Cliente</th><th class="n">Insoluto</th>'+cols.map(([,l])=>`<th>${l}</th>`).join('')+'</tr>';}
 
   function renderTable(){const cols=SCHEMA[active].cols;
     let h='<tr><th data-k="name">Cliente</th><th class="n" data-k="amount">Insoluto</th>';
