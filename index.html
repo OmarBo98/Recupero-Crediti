@@ -223,6 +223,7 @@ svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
 .pct-wrap tbody tr:hover{background:#F7FAFC}
 .pct-wrap tr.pct-tot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0;background:#FAFBFD}
 .pct-miss{color:var(--muted)}
+.pct-sub{font-size:11px;color:#A23C30}
 .pct-note{font-size:12px;color:var(--muted);line-height:1.5;margin:14px 0 0}
 .pct-warn{background:#FFF6E5;border:1px solid #F3D9A4;color:#7a5a12;border-radius:10px;padding:10px 14px;font-size:12.5px;margin:0 0 14px;line-height:1.5}
 .rc-count{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--muted)}
@@ -759,37 +760,39 @@ select.rc-edit{cursor:pointer}
   const yearOfInv=d=>{const dd=parseISO(d);return dd?String(dd.getFullYear()):'nd';};
   /* insoluto di oggi per anno della fattura: esclusi i clienti "Pagato"; se l'importo del cliente e' sceso (acconti, modifiche a mano)
      la differenza si toglie dalle fatture piu' vecchie, se e' salito si aggiunge alla piu' recente */
-  function insolutoPerAnno(co){const out={};
-    (state[co]||[]).forEach(c=>{if(canon(c.status)===PAID)return;const amt=c.amount||0;if(Math.abs(amt)<0.005)return;
+  function insolutoPerAnno(co){const out={},lost={};
+    (state[co]||[]).forEach(c=>{if(canon(c.status)===PAID)return;const amt=c.amount||0;if(Math.abs(amt)<0.005)return;const isL=canon(c.status)===LOST;
       const list=(c.inv||[]).filter(iv=>Math.abs(iv.r||0)>0.0049).map(iv=>({d:iv.d||'',y:yearOfInv(iv.d),r:iv.r||0}))
         .sort((a,b)=>(a.d?0:1)-(b.d?0:1)||a.d.localeCompare(b.d));
-      if(!list.length){out.nd=(out.nd||0)+amt;return;}
+      if(!list.length){out.nd=(out.nd||0)+amt;if(isL)lost.nd=(lost.nd||0)+amt;return;}
       let diff=list.reduce((q,x)=>q+x.r,0)-amt;
       if(diff>0.005){for(const it of list){if(diff<=0.005)break;if(it.r<=0)continue;const t=Math.min(it.r,diff);it.r-=t;diff-=t;}}
       else if(diff<-0.005)list[list.length-1].r+=-diff;
-      list.forEach(x=>{out[x.y]=(out[x.y]||0)+x.r;});});
-    return out;}
-  function pctRows(co){const ins=insolutoPerAnno(co),fat=(uploads[co]&&uploads[co].fat)||null;
+      list.forEach(x=>{out[x.y]=(out[x.y]||0)+x.r;if(isL)lost[x.y]=(lost[x.y]||0)+x.r;});});
+    return {ins:out,lost:lost};}
+  function pctRows(co){const _p=insolutoPerAnno(co),ins=_p.ins,lostM=_p.lost,fat=(uploads[co]&&uploads[co].fat)||null;
     const ys=new Set(Object.keys(ins));if(fat)Object.keys(fat).forEach(y=>ys.add(y));
     return [...ys].sort((a,b)=>a==='nd'?1:b==='nd'?-1:a-b).map(y=>{const f=fat&&fat[y];
-      const lordo=f?Math.round((f.lordo-f.nc)*100)/100:null,i=Math.round((ins[y]||0)*100)/100;
-      return{y,n:f?f.n:null,nc:f?f.nc:0,lordo,ins:i,pct:(lordo&&lordo>0)?i/lordo*100:null};})
+      const lordo=f?Math.round((f.lordo-f.nc)*100)/100:null,i=Math.round((ins[y]||0)*100)/100,lo=Math.round((lostM[y]||0)*100)/100;
+      return{y,n:f?f.n:null,nc:f?f.nc:0,lordo,ins:i,lost:lo,pct:(lordo&&lordo>0)?i/lordo*100:null};})
       .filter(r=>r.lordo!=null||Math.abs(r.ins)>0.005);}
+  const lostCell=(lo,ins)=>lo>0.005?`${n2(lo)} € <span class="pct-sub">(${pctFmt(ins>0.005?lo/ins*100:null)})</span>`:'<span class="pct-miss">—</span>';
   function pctTable(rows,withNote){
     const cy=String(new Date().getFullYear());
-    let h='<div class="pct-wrap"><table><thead><tr><th>Anno</th><th class="n">Fatture emesse</th><th class="n">Fatturato lordo</th><th class="n">Insoluto oggi</th><th class="n">% insoluto</th><th class="n">% incassato</th></tr></thead><tbody>';
+    let h='<div class="pct-wrap"><table><thead><tr><th>Anno</th><th class="n">Fatture emesse</th><th class="n">Fatturato lordo</th><th class="n">Insoluto oggi</th><th class="n" style="white-space:normal;min-width:150px">di cui persi (importo e % sul totale)</th><th class="n">% insoluto</th><th class="n">% incassato</th></tr></thead><tbody>';
     rows.forEach(r=>{const w=r.pct==null?0:Math.max(0,Math.min(100,r.pct));
       const tip=r.lordo!=null?` title="Fatture ${n2(r.lordo+r.nc)} € − note di credito ${n2(r.nc)} €"`:'';
       h+=`<tr><td class="yr">${r.y==='nd'?'Senza data':r.y}${r.y===cy?'<small>in corso</small>':''}</td>`
         +`<td class="n">${r.n==null?'<span class="pct-miss">—</span>':r.n.toLocaleString('it-IT')}</td>`
         +`<td class="n"${tip}>${r.lordo==null?'<span class="pct-miss">—</span>':n2(r.lordo)+' €'}</td>`
         +`<td class="n">${n2(r.ins)} €</td>`
+        +`<td class="n"${r.lost>0.005&&r.lordo>0?` title="Pari al ${pctFmt(r.lost/r.lordo*100)} del fatturato lordo dell'anno"`:''}>${lostCell(r.lost,r.ins)}</td>`
         +`<td class="n" style="background:linear-gradient(90deg,#F8D3CE ${w}%,transparent ${w}%)"><b>${pctFmt(r.pct)}</b></td>`
         +`<td class="n">${pctFmt(r.pct==null?null:100-r.pct)}</td></tr>`;});
     const kn=rows.filter(r=>r.lordo!=null);
-    const tl=kn.reduce((q,r)=>q+r.lordo,0),ti=rows.reduce((q,r)=>q+r.ins,0),tik=kn.reduce((q,r)=>q+r.ins,0);
+    const tl=kn.reduce((q,r)=>q+r.lordo,0),ti=rows.reduce((q,r)=>q+r.ins,0),tlo=rows.reduce((q,r)=>q+(r.lost||0),0),tik=kn.reduce((q,r)=>q+r.ins,0);
     const tp=tl>0?tik/tl*100:null;
-    h+=`<tr class="pct-tot"><td class="yr">Totale</td><td class="n">${kn.length?kn.reduce((q,r)=>q+(r.n||0),0).toLocaleString('it-IT'):'—'}</td><td class="n">${kn.length?n2(tl)+' €':'—'}</td><td class="n">${n2(ti)} €</td><td class="n">${pctFmt(tp)}</td><td class="n">${pctFmt(tp==null?null:100-tp)}</td></tr>`;
+    h+=`<tr class="pct-tot"><td class="yr">Totale</td><td class="n">${kn.length?kn.reduce((q,r)=>q+(r.n||0),0).toLocaleString('it-IT'):'—'}</td><td class="n">${kn.length?n2(tl)+' €':'—'}</td><td class="n">${n2(ti)} €</td><td class="n">${lostCell(tlo,ti)}</td><td class="n">${pctFmt(tp)}</td><td class="n">${pctFmt(tp==null?null:100-tp)}</td></tr>`;
     return h+'</tbody></table></div>';}
   function renderPct(){const v=g('viewPct');if(!v||v.hidden)return;
     g('pctDate').textContent='Situazione al '+fmtDate(todayISO());
@@ -807,11 +810,11 @@ select.rc-edit{cursor:pointer}
       else html+=u?'<p class="pct-note">Nessun insoluto e nessuna fattura da mostrare.</p>':`<p class="pct-note">Carica a sinistra l'export fatture di ${esc(SCHEMA[k].label)} per vedere fatturato, insoluto e percentuali.</p>`;
       html+='</div>';});
     if(withFat.length>1){const by={};
-      withFat.forEach(({rows})=>rows.forEach(r=>{const o=by[r.y]||(by[r.y]={y:r.y,n:null,nc:0,lordo:null,ins:0});
-        o.ins+=r.ins;o.nc+=r.nc;if(r.n!=null)o.n=(o.n||0)+r.n;if(r.lordo!=null)o.lordo=(o.lordo||0)+r.lordo;}));
-      const rows=Object.values(by).sort((a,b)=>a.y==='nd'?1:b.y==='nd'?-1:a.y-b.y).map(r=>({...r,lordo:r.lordo==null?null:Math.round(r.lordo*100)/100,ins:Math.round(r.ins*100)/100,pct:(r.lordo&&r.lordo>0)?r.ins/r.lordo*100:null}));
+      withFat.forEach(({rows})=>rows.forEach(r=>{const o=by[r.y]||(by[r.y]={y:r.y,n:null,nc:0,lordo:null,ins:0,lost:0});
+        o.ins+=r.ins;o.lost+=r.lost||0;o.nc+=r.nc;if(r.n!=null)o.n=(o.n||0)+r.n;if(r.lordo!=null)o.lordo=(o.lordo||0)+r.lordo;}));
+      const rows=Object.values(by).sort((a,b)=>a.y==='nd'?1:b.y==='nd'?-1:a.y-b.y).map(r=>({...r,lordo:r.lordo==null?null:Math.round(r.lordo*100)/100,ins:Math.round(r.ins*100)/100,lost:Math.round(r.lost*100)/100,pct:(r.lordo&&r.lordo>0)?r.ins/r.lordo*100:null}));
       html=`<div class="panel"><h3>Tutte le società</h3><p class="ph">Somma di ${withFat.map(x=>esc(SCHEMA[x.k].label)).join(' + ')}.</p>${pctTable(rows)}</div>`+html;}
-    html+=`<p class="pct-note"><b>Come si leggono i numeri.</b> Fatturato lordo = totale ivato delle fatture emesse nell'anno solare (data fattura), al netto delle note di credito. Insoluto oggi = quanto resta da incassare, attribuito all'anno della fattura: sono esclusi i clienti segnati «Pagato», mentre acconti e correzioni a mano riducono prima le fatture più vecchie. % insoluto = insoluto ÷ fatturato lordo dello stesso anno. Il fatturato arriva dall'ultimo export caricato per ogni società, quindi gli anni mostrati sono quelli contenuti nel file.</p>`;
+    html+=`<p class="pct-note"><b>Come si leggono i numeri.</b> Fatturato lordo = totale ivato delle fatture emesse nell'anno solare (data fattura), al netto delle note di credito. Insoluto oggi = quanto resta da incassare, attribuito all'anno della fattura: sono esclusi i clienti segnati «Pagato», mentre acconti e correzioni a mano riducono prima le fatture più vecchie. % insoluto = insoluto ÷ fatturato lordo dello stesso anno. «Di cui persi» = parte dell'insoluto dei clienti segnati «Perso» (resta compresa nell'insoluto); la percentuale è calcolata sul totale insoluto dello stesso anno. Il fatturato arriva dall'ultimo export caricato per ogni società, quindi gli anni mostrati sono quelli contenuti nel file.</p>`;
     g('pctBody').innerHTML=html;}
   function setView(v){const pct=v==='pct';g('viewRC').hidden=pct;g('viewPct').hidden=!pct;
     document.querySelectorAll('#rcNav button').forEach(b=>b.classList.toggle('on',b.dataset.view===(pct?'pct':'rc')));
