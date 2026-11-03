@@ -222,6 +222,22 @@ svg text{font-family:var(--mono);font-size:10px;fill:var(--muted)}
 .pct-wrap td.yr small{font-family:var(--mono);font-weight:400;font-size:10.5px;color:var(--muted);margin-left:6px}
 .pct-wrap tbody tr:hover{background:#F7FAFC}
 .pct-wrap tr.pct-tot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0;background:#FAFBFD}
+.fg-gate{position:fixed;inset:0;z-index:10000;overflow:auto;background:radial-gradient(1100px 620px at 50% -12%,#1d3a52 0%,var(--ink) 62%);color:var(--inv);display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.fg-in{width:100%;max-width:520px;text-align:center}
+.fg-h{font-family:var(--disp);font-weight:700;font-size:clamp(28px,5.2vw,40px);letter-spacing:-.02em;line-height:1.15;margin:0 0 28px;color:#fff}
+.fg-h .fg-b{white-space:nowrap}
+.fg-h .fg-b b{color:#3FD6A7}
+.fg-card{background:var(--paper);color:var(--text);border-radius:16px;padding:30px 28px 24px;box-shadow:0 24px 70px rgba(0,0,0,.45);text-align:left}
+.fg-lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.fg-p{font-size:14px;color:var(--muted);margin:0 0 20px;line-height:1.5}
+.fg-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1f2937;border:1px solid var(--line);border-radius:11px;padding:13px 16px;font-weight:600;font-size:15px;cursor:pointer;transition:.15s}
+.fg-btn:hover{border-color:#3FD6A7;box-shadow:0 0 0 3px rgba(63,214,167,.18)}
+.fg-btn:disabled{opacity:.6;cursor:default}
+.fg-hint{display:none;font-size:12.5px;margin-top:14px;line-height:1.45;color:var(--muted)}
+.fg-hint.on{display:block}.fg-hint.err{color:var(--red)}.fg-hint.ok{color:var(--emerald)}
+.fg-skip{display:block;margin:12px auto 0;background:none;border:0;color:var(--muted);text-decoration:underline;font-size:12.5px;cursor:pointer}
+.fg-skip[hidden]{display:none}
+.fg-foot{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
 .pct-miss{color:var(--muted)}
 .pct-sub{font-size:11px;color:#A23C30}
 .pct-note{font-size:12px;color:var(--muted);line-height:1.5;margin:14px 0 0}
@@ -516,6 +532,84 @@ select.rc-edit{cursor:pointer}
     </div>
   </div></div>
 </div>
+<script>
+/* ===== Schermata di benvenuto =====
+   Su un dispositivo nuovo (nessun dato salvato in questo browser) chiede subito l'accesso con Google,
+   ritrova il backup su Drive e riapre l'app con i dati. Sui dispositivi gia' in uso non compare. */
+(function(){
+  var K={data:'fluentfinance_recupero_v2',schema:'fluentfinance_recupero_schema_v1',up:'fluentfinance_recupero_uploads_v1',ord:'fluentfinance_recupero_folderorder_v1',memo:'fluentfinance_recupero_memo_v1',auth:'fluentfinance_recupero_auth_v1',tok:'fluentfinance_recupero_gtok'};
+  var CLIENT_ID='458486401938-231n70j1690ri69dien3rrbcom7rdt17.apps.googleusercontent.com';
+  var SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
+  var ALLOWED=['boscomar98@gmail.com','mirkocicero73@gmail.com'];   /* unica lista degli account autorizzati (la usa anche il modulo Drive) */
+  var FILE='fluentfinance_recupero_backup.json';
+  window.__FF_ALLOWED=ALLOWED;
+  function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  if(lsGet(K.auth)||lsGet(K.data)||lsGet(K.schema))return;
+  var G='<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+  var wrap=document.createElement('div');wrap.id='fgGate';wrap.className='fg-gate';
+  wrap.innerHTML='<div class="fg-in"><h1 class="fg-h">Benvenuto in <span class="fg-b">Fluent<b>Finance</b></span> <span style="white-space:nowrap">- RecuperoCrediti</span></h1>'
+    +'<div class="fg-card"><div class="fg-lab">Accesso</div>'
+    +'<p class="fg-p">Accedi con il tuo account Google per ritrovare i tuoi dati su qualsiasi dispositivo.</p>'
+    +'<button type="button" class="fg-btn" id="fgBtn">'+G+'<span>Accedi con Google</span></button>'
+    +'<div class="fg-hint" id="fgHint"></div>'
+    +'<button type="button" class="fg-skip" id="fgSkip" hidden>Continua senza ripristinare i dati</button>'
+    +'<div class="fg-foot">Accesso riservato agli account autorizzati.</div></div></div>';
+  document.body.appendChild(wrap);
+  function el(id){return document.getElementById(id);}
+  function hint(m,kind){var h=el('fgHint');h.textContent=m||'';h.className='fg-hint'+(m?' on':'')+(kind?' '+kind:'');}
+  var tc=null,token=null,email=null,expires=3600;
+  function close(){if(wrap.parentNode)wrap.parentNode.removeChild(wrap);if(window.__ffAdopt&&token)window.__ffAdopt(token,email);}
+  function loadGis(cb){
+    if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return cb();
+    var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.defer=true;
+    s.onload=function(){s.dataset.loaded='1';cb();};
+    s.onerror=function(){hint('Libreria Google non caricata: controlla la connessione e ricarica la pagina.','err');};
+    document.head.appendChild(s);}
+  function ready(){tc=window.google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPE,callback:onToken});}
+  function drive(url){return fetch(url,{headers:{Authorization:'Bearer '+token}}).then(function(r){
+    if(!r.ok)throw new Error(r.status+' '+r.statusText);return r.json();});}
+  function legacy(keys){var L={NSA:'NSA srl',Sanitech:'Sanitech srl',SanitechCoop:'Soc Coop Sanitech ARL'},o={};
+    keys.forEach(function(k){o[k]={label:L[k]||k,cols:[['status','Stato'],['date','Ultimo contatto'],['note','Note']]};});return o;}
+  function apply(sn){
+    if(!sn||typeof sn!=='object'||!sn.state||typeof sn.state!=='object')throw new Error('backup non valido');
+    var keys=Object.keys(sn.state);if(!keys.length)return false;
+    var schema=(sn.schema&&typeof sn.schema==='object'&&Object.keys(sn.schema).length)?sn.schema:legacy(keys);
+    lsSet(K.schema,JSON.stringify(schema));lsSet(K.data,JSON.stringify(sn.state));
+    if(sn.uploads&&typeof sn.uploads==='object')lsSet(K.up,JSON.stringify(sn.uploads));
+    if(Array.isArray(sn.folderOrder)&&sn.folderOrder.length)lsSet(K.ord,JSON.stringify(sn.folderOrder));
+    if(sn.memo&&typeof sn.memo==='object')lsSet(K.memo,JSON.stringify(sn.memo));
+    return true;}
+  function restore(){
+    hint('Accesso eseguito. Cerco i tuoi dati su Drive…','ok');
+    drive('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent("name='"+FILE+"' and trashed=false")+'&spaces=drive&fields=files(id)&pageSize=1')
+    .then(function(j){var f=(j.files||[])[0];
+      if(!f){lsSet(K.auth,email);close();return;}
+      return drive('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media').then(function(sn){
+        var ok=apply(sn);lsSet(K.auth,email);
+        if(ok){hint('Dati ritrovati. Apro l’app…','ok');setTimeout(function(){location.reload();},400);}else close();});})
+    .catch(function(e){hint('Non riesco a leggere i dati da Drive: '+(e&&e.message||e)+'. Riprova.','err');el('fgSkip').hidden=false;el('fgBtn').disabled=false;});}
+  function onToken(r){
+    el('fgBtn').disabled=false;
+    if(!r||r.error){hint('Accesso annullato o negato.','err');return;}
+    token=r.access_token;expires=r.expires_in||3600;hint('Verifico l’account…');el('fgBtn').disabled=true;
+    fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+token}})
+    .then(function(x){return x.json();})
+    .then(function(j){var em=(j&&j.email)||'';
+      if(!em||ALLOWED.map(function(a){return a.toLowerCase();}).indexOf(em.toLowerCase())<0){
+        try{window.google.accounts.oauth2.revoke(token,function(){});}catch(e){}
+        token=null;el('fgBtn').disabled=false;hint('Questo account ('+(em||'sconosciuto')+') non è autorizzato. Usa uno degli account abilitati.','err');return;}
+      email=em;
+      try{sessionStorage.setItem(K.tok,JSON.stringify({t:token,e:em,x:Date.now()+(expires-60)*1000}));}catch(e){}
+      restore();})
+    .catch(function(){el('fgBtn').disabled=false;hint('Impossibile verificare l’account. Riprova.','err');});}
+  el('fgBtn').onclick=function(){
+    if(!tc){hint('Sto preparando l’accesso a Google… riprova tra un istante.');return;}
+    hint('');tc.requestAccessToken({prompt:'select_account'});};
+  el('fgSkip').onclick=function(){lsSet(K.auth,email||'ospite');close();};
+  loadGis(ready);
+})();
+</script>
 <script>
   const numIt=v=>{if(typeof v==='number')return v;v=(''+v).replace(/\./g,'').replace(',','.').replace(/[^\d.\-]/g,'');return parseFloat(v)||0;};
 /* ============================================================
@@ -1104,10 +1198,13 @@ select.rc-edit{cursor:pointer}
   /* Per collegare l'app serve un Client ID OAuth (vedi finestra di configurazione). */
   var GOOGLE_CLIENT_ID = '458486401938-231n70j1690ri69dien3rrbcom7rdt17.apps.googleusercontent.com';   /* incorporato: non serve piu' incollarlo su nessun dispositivo */
   const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
-  const GD_ALLOWED=['boscomar98@gmail.com','mirkocicero73@gmail.com'];   /* solo questi account possono sincronizzare */
+  const GD_ALLOWED=window.__FF_ALLOWED||['boscomar98@gmail.com','mirkocicero73@gmail.com'];   /* solo questi account possono sincronizzare */
   const GD_FILE='fluentfinance_recupero_backup.json';    /* nome del file di backup su Drive */
   const LS_CID='fluentfinance_recupero_gclientid';
   let gdToken=null, gdTokenClient=null, gdFileId=null, gdEmail=null, gisReady=false;
+  /* sessione Google appena aperta dalla schermata di benvenuto (vale finche' il token non scade) */
+  try{const _t=JSON.parse(sessionStorage.getItem('fluentfinance_recupero_gtok')||'null');if(_t&&_t.t&&_t.x>Date.now()){gdToken=_t.t;gdEmail=_t.e||null;}}catch(e){}
+  window.__ffAdopt=function(t,e){gdToken=t;gdEmail=e||null;gdRender();};
   const gdClientId=()=>{if(GOOGLE_CLIENT_ID)return GOOGLE_CLIENT_ID;try{return localStorage.getItem(LS_CID)||'';}catch(e){return '';}};
 
   function gdHint(msg,kind){const h=g('rcGdHint');if(!h)return;h.textContent=msg||'';h.className='gd-hint'+(msg?' on':'')+(kind?' '+kind:'');}
@@ -1118,7 +1215,7 @@ select.rc-edit{cursor:pointer}
 
   /* --- carica solo la libreria GIS di Google (nessun gapi) --- */
   function loadScript(src){return new Promise((res,rej)=>{
-    const ex=[...document.scripts].find(s=>s.src===src);if(ex&&ex.dataset.loaded){return res();}
+    const ex=[...document.scripts].find(s=>s.src===src);if(ex){if(ex.dataset.loaded)return res();ex.addEventListener('load',()=>res());ex.addEventListener('error',()=>rej(new Error('load '+src)));return;}
     const s=document.createElement('script');s.src=src;s.async=true;s.defer=true;
     s.onload=()=>{s.dataset.loaded='1';res();};s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s);});}
   async function ensureGis(){
@@ -1168,12 +1265,13 @@ select.rc-edit{cursor:pointer}
     if(!r.ok){let msg=r.status+' '+r.statusText;try{const j=await r.json();if(j.error&&j.error.message)msg=j.error.message;}catch(e){}throw new Error(msg);}
     return r;}
 
-  function gdSnapshot(){return {v:2, ts:Date.now(), state:state, uploads:uploads, folderOrder:folderOrder};}
+  function gdSnapshot(){return {v:3, ts:Date.now(), state:state, uploads:uploads, folderOrder:folderOrder, schema:SCHEMA, memo:memoLoad()};}
   function gdApply(snap){
     if(!snap||typeof snap!=='object')throw new Error('backup non valido');
     if(snap.state&&typeof snap.state==='object'){Object.keys(SCHEMA).forEach(k=>{state[k]=Array.isArray(snap.state[k])?snap.state[k]:[];});save();}
     if(snap.uploads&&typeof snap.uploads==='object'){uploads=snap.uploads;saveUploads();}
-    if(Array.isArray(snap.folderOrder)&&snap.folderOrder.length){folderOrder=snap.folderOrder;saveOrder();}}
+    if(Array.isArray(snap.folderOrder)&&snap.folderOrder.length){folderOrder=snap.folderOrder;saveOrder();}
+    if(snap.memo&&typeof snap.memo==='object'){try{localStorage.setItem(LS_MEMO,JSON.stringify(snap.memo));}catch(e){}}}
 
     /* ---- backup locale: scarica/ricarica un file .json con l'intero stato dell'app, senza Google ---- */
     function backupHint(msg,kind){const h=g('rcBackupHint');if(!h)return;h.textContent=msg||'';h.className='rc-hint'+(msg?' on':'')+(kind?' '+kind:'');}
